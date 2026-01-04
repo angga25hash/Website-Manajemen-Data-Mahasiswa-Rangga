@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Manajemen Data Mahasiswa</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    min-height: 100vh;
+    background: url("onepice.png") center/cover no-repeat fixed;
+}
+
+/* Overlay background */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: -1;
+}
+
+/* HEADER POJOK KANAN */
+.univ {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0,0,0,0.6);
+    padding: 8px 16px;
+    border-radius: 50px;
+    z-index: 999;
+}
+
+.univ img {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: white;
+    padding: 4px;
+}
+
+.univ span {
+    font-size: 30px;
+    font-weight: bold;
+    color: white;
+    white-space: nowrap;
+}
+
+/* Container utama */
+.container {
+    background: rgba(255,255,255,0.95);
+    max-width: 1000px;
+    margin: 120px auto 40px;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Menu */
+.menu {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.menu button {
+    background: #1d2671;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.menu button:hover {
+    background: #c33764;
+}
+
+/* Card */
+.card {
+    display: none;
+    background: #f7f9fc;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.card h2 {
+    color: #1d2671;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.card button {
+    background: #c33764;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.message {
+    margin-top: 8px;
+    font-weight: bold;
+}
+
+/* Tabel */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #1d2671;
+    color: white;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+tr:nth-child(even) {
+    background: #f2f2f2;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="univ">
+    <img src="logo.png" alt="Logo One Piece">
+    <span>Universitas Rangga</span>
+</div>
+
+<div class="container">
+<h1>Manajemen Data Mahasiswa</h1>
+
+<!-- MENU -->
+<div class="menu">
+    <button onclick="showCard('input')">Input</button>
+    <button onclick="showCard('edit')">Edit</button>
+    <button onclick="showCard('hapus')">Hapus</button>
+    <button onclick="showCard('ipk')">Input IPK</button>
+</div>
+
+<!-- INPUT -->
+<div id="input" class="card">
+<h2>Input Mahasiswa</h2>
+<input id="nim" placeholder="NIM (8–12 digit)">
+<input id="nama" placeholder="Nama">
+<input id="jurusan" placeholder="Jurusan">
+<button onclick="tambahMahasiswa()">Simpan</button>
+<div class="message" id="msgInput"></div>
+</div>
+
+<!-- EDIT -->
+<div id="edit" class="card">
+<h2>Edit Mahasiswa</h2>
+<input id="editNIM" placeholder="NIM">
+<input id="editNama" placeholder="Nama Baru">
+<input id="editJurusan" placeholder="Jurusan Baru">
+<button onclick="editMahasiswa()">Update</button>
+<div class="message" id="msgEdit"></div>
+</div>
+
+<!-- HAPUS -->
+<div id="hapus" class="card">
+<h2>Hapus Mahasiswa</h2>
+<input id="hapusNIM" placeholder="NIM">
+<button onclick="hapusMahasiswa()">Hapus</button>
+<div class="message" id="msgHapus"></div>
+</div>
+
+<!-- IPK -->
+<div id="ipk" class="card">
+<h2>Input IPK</h2>
+<input id="ipkNIM" placeholder="NIM">
+<input id="ipkValue" placeholder="IPK (0.00 – 4.00)">
+<button onclick="inputIPK()">Simpan IPK</button>
+<div class="message" id="msgIPK"></div>
+</div>
+
+<!-- TABEL LANGSUNG TAMPIL -->
+<h2>Data Mahasiswa (A–Z)</h2>
+<table>
+<thead>
+<tr>
+<th>NIM</th>
+<th>Nama</th>
+<th>Jurusan</th>
+<th>IPK</th>
+</tr>
+</thead>
+<tbody id="tabelMahasiswa"></tbody>
+</table>
+
+</div>
+
+<script>
+let mahasiswa = [];
+
+function showCard(id) {
+    document.querySelectorAll('.card').forEach(c => c.style.display = "none");
+    document.getElementById(id).style.display = "block";
+}
+
+function sortByNama() {
+    mahasiswa.sort((a,b) => a.nama.localeCompare(b.nama));
+}
+
+function tambahMahasiswa() {
+    let nim = document.getElementById("nim").value;
+    let nama = document.getElementById("nama").value;
+    let jurusan = document.getElementById("jurusan").value;
+    let msg = document.getElementById("msgInput");
+
+    try {
+        if (!/^[0-9]{8,12}$/.test(nim)) throw "NIM harus 8–12 digit";
+        if (mahasiswa.some(m => m.nim === nim)) throw "NIM sudah terdaftar";
+        if (!nama || !jurusan) throw "Data tidak boleh kosong";
+
+        mahasiswa.push({ nim, nama, jurusan, ipk: "-" });
+        sortByNama();
+        tampilkanMahasiswa();
+
+        msg.style.color = "green";
+        msg.innerText = "Data berhasil disimpan";
+    } catch(e) {
+        msg.style.color = "red";
+        msg.innerText = e;
+    }
+}
+
+function editMahasiswa() {
+    let nim = document.getElementById("editNIM").value;
+    let msg = document.getElementById("msgEdit");
+    let m = mahasiswa.find(x => x.nim === nim);
+
+    if (!m) return msg.innerText = "Data tidak ditemukan";
+
+    m.nama = document.getElementById("editNama").value;
+    m.jurusan = document.getElementById("editJurusan").value;
+    sortByNama();
+    tampilkanMahasiswa();
+
+    msg.style.color="green";
+    msg.innerText="Data diperbarui";
+}
+
+function hapusMahasiswa() {
+    let nim = document.getElementById("hapusNIM").value;
+    mahasiswa = mahasiswa.filter(m => m.nim !== nim);
+    tampilkanMahasiswa();
+}
+
+function inputIPK() {
+    let nim = document.getElementById("ipkNIM").value;
+    let ipk = document.getElementById("ipkValue").value;
+    let msg = document.getElementById("msgIPK");
+
+    let m = mahasiswa.find(x => x.nim === nim);
+    if (!m) return msg.innerText="NIM tidak ditemukan";
+
+    m.ipk = ipk;
+    tampilkanMahasiswa();
+    msg.style.color="green";
+    msg.innerText="IPK disimpan";
+}
+
+function tampilkanMahasiswa() {
+    let t = document.getElementById("tabelMahasiswa");
+    t.innerHTML = "";
+    mahasiswa.forEach(m => {
+        t.innerHTML += `
+        <tr>
+            <td>${m.nim}</td>
+            <td>${m.nama}</td>
+            <td>${m.jurusan}</td>
+            <td>${m.ipk}</td>
+        </tr>`;
+    });
+}
+</script>
+
+</body>
+</html>
